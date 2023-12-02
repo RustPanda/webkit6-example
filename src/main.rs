@@ -18,9 +18,9 @@ fn main() -> glib::ExitCode {
         set_load_css();
 
         let webview = web_view();
-        let progress = progress_bar(&webview);
         let go_back = go_back(&webview);
-        let title = window_title(&go_back, &progress, &webview);
+        let progress = progress_bar(&webview, &go_back);
+        let title = window_title(  &webview);
         let header_bar = header_bar(go_back, title);
 
         let content = Box::new(Orientation::Vertical, 0);
@@ -62,8 +62,6 @@ fn set_load_css() {
 }
 
 fn window_title(
-    go_back: &adw::gtk::Button,
-    progress: &adw::gtk::ProgressBar,
     webview: &WebView,
 ) -> adw::WindowTitle {
     let title = adw::WindowTitle::builder()
@@ -73,11 +71,40 @@ fn window_title(
 
     {
         let title = title.clone();
-        let go_back = go_back.clone();
-        let progress = progress.clone();
 
         webview.bind_property("uri", &title, "subtitle").build();
+    }
+    title
+}
 
+fn go_back(webview: &WebView) -> adw::gtk::Button {
+    let webview = webview.clone();
+    let go_back = adw::gtk::Button::builder()
+        .icon_name("edit-undo-symbolic")
+        .sensitive(false)
+        .build();
+
+    go_back.connect_clicked(move |_button| {
+        webview.go_back();
+    });
+    go_back
+}
+
+fn progress_bar(webview: &WebView, go_back: &adw::gtk::Button) -> adw::gtk::ProgressBar {
+    let progress = adw::gtk::ProgressBar::new();
+    progress.set_ellipsize(adw::gtk::pango::EllipsizeMode::Start);
+    progress.add_css_class("osd");
+
+    {
+        let progress = progress.clone();
+        webview.connect_estimated_load_progress_notify(move |webview| {
+            progress.set_fraction(webview.estimated_load_progress())
+        });
+    }
+
+    {
+        let go_back = go_back.clone();
+        let progress = progress.clone();
         webview.connect_load_changed(move |webview, event| match event {
             webkit6::LoadEvent::Started => {}
             webkit6::LoadEvent::Redirected => {}
@@ -96,33 +123,6 @@ fn window_title(
                 }
             }
             _ => unreachable!(),
-        });
-    }
-    title
-}
-
-fn go_back(webview: &WebView) -> adw::gtk::Button {
-    let webview = webview.clone();
-    let go_back = adw::gtk::Button::builder()
-        .icon_name("edit-undo-symbolic")
-        .sensitive(false)
-        .build();
-
-    go_back.connect_clicked(move |_button| {
-        webview.go_back();
-    });
-    go_back
-}
-
-fn progress_bar(webview: &WebView) -> adw::gtk::ProgressBar {
-    let progress = adw::gtk::ProgressBar::new();
-    progress.set_ellipsize(adw::gtk::pango::EllipsizeMode::Start);
-    progress.add_css_class("osd");
-
-    {
-        let progress = progress.clone();
-        webview.connect_estimated_load_progress_notify(move |webview| {
-            progress.set_fraction(webview.estimated_load_progress())
         });
     }
 
