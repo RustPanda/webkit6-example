@@ -6,7 +6,7 @@ use adw::{
 };
 use webkit6::{prelude::*, WebView};
 
-const PAGE_URL: &str = "https://thisweek.gnome.org/";
+const PAGE_URL: &str = "https://thiswaeek.gnome.org/";
 const TITLE: &str = "Matvei 🏳️‍🌈";
 
 fn main() -> glib::ExitCode {
